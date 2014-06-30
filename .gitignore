@@ -1,3 +1,5 @@
 .env
 .idea/.name
 .idea/workspace.xml
+*.pyc
+
