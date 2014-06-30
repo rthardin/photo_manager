@@ -47,7 +47,6 @@ def get_datetime(path):
 
 
 def organize(input_root, output_root):
-    moved_files = []
     # Find all the photos in the input_dir
     for dirpath, dirnames, filenames in os.walk(input_root):
         for filename in filenames:
@@ -75,12 +74,11 @@ def organize(input_root, output_root):
                 # Move the image to the destination
                 shutil.move(filepath, destination_path)
                 # Append the paths to the list of moved files
-                moved_files.append({'source': filepath,
-                                    'destination': destination_path})
+                yield {'source': filepath,
+                       'destination': destination_path}
             # If it's not an image, or does not contain EXIF metadata, skip it
             except ValueError:
                 continue
             except Exception as e:
                 # Logging would be nice
                 continue
-    return moved_files
