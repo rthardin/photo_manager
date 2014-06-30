@@ -1,3 +1,4 @@
+import shutil
 import unittest
 
 import os
@@ -9,11 +10,22 @@ photo_directory = './resource/images'
 
 
 class TestPhotoTools(unittest.TestCase):
+
     def setUp(self):
-        pass
+        # Delete the test directory if it exists
+        try:
+            shutil.rmtree(self.__class__.__name__)
+        except OSError:
+            pass
+        # Create the test directory
+        os.mkdir(self.__class__.__name__)
 
     def tearDown(self):
-        pass
+        # Delete the test directory if it exists
+        try:
+            shutil.rmtree(self.__class__.__name__)
+        except OSError:
+            pass
 
     def test_get_metadata(self):
         # Get a list of photos
