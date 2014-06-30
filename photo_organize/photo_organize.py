@@ -80,4 +80,7 @@ def organize(input_root, output_root):
             # If it's not an image, or does not contain EXIF metadata, skip it
             except ValueError:
                 continue
+            except Exception as e:
+                # Logging would be nice
+                continue
     return moved_files
