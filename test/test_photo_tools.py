@@ -68,7 +68,8 @@ class TestPhotoTools(unittest.TestCase):
         dirname = os.path.split(photo_directory)[1]
         shutil.copytree(photo_directory, os.path.join(input_dir, dirname))
         # Organize the photos
-        print photo_tools.organize(input_dir, output_dir)
+        for moved_file in photo_tools.organize(input_dir, output_dir):
+            print moved_file
 
 if __name__ == '__main__':
     unittest.main()

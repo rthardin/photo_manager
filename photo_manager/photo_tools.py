@@ -1,8 +1,26 @@
+import hashlib
 import shutil
 import errno
 import os
 import exifread
 from datetime import datetime
+
+
+def read_in_chunks(path, chunk_size=1048576):
+    with open(path, 'rb') as f:
+        while True:
+            data = f.read(chunk_size)
+            if not data:
+                break
+            yield data
+
+
+def file_sha1(path):
+    sha1 = hashlib.sha1()
+    sha1.update('blob %s\0' % os.path.getsize(path))
+    for chunk in read_in_chunks(path):
+        sha1.update(chunk)
+    return sha1.hexdigest()
 
 
 def get_metadata(path):
@@ -33,19 +51,28 @@ def organize(input_root, output_root):
     # Find all the photos in the input_dir
     for dirpath, dirnames, filenames in os.walk(input_root):
         for filename in filenames:
+            # Get the extension
+            extension = os.path.splitext(filename)[1].lower()
             filepath = os.path.join(dirpath, filename)
             try:
                 # Get the EXIF datetime
                 dt = get_datetime(filepath)
-                # Create the destination directory, if it does not exist
+                # Determine the destination directory
                 output_dirs = os.path.join(output_root, str(dt.year), str(dt.month))
+                # Create a destination file name based on the date and the file's SHA
+                destination_name = '%s_%s%s' % (dt.isoformat(), file_sha1(filepath), extension)
+                destination_path = os.path.join(output_dirs, destination_name)
+                # Check if the destination file already exists, and if it does, skip it
+                if os.path.isfile(destination_path):
+                    # Logging would be nice
+                    continue
+                # Create the destination directory, if it does not already exist
                 try:
                     os.makedirs(output_dirs)
                 except OSError as e:
                     if e.errno != errno.EEXIST:
                         raise e
                 # Move the image to the destination
-                destination_path = os.path.join(output_dirs, filename)
                 shutil.move(filepath, destination_path)
                 # Append the paths to the list of moved files
                 moved_files.append({'source': filepath,
