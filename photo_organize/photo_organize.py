@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+
+import argparse
 import hashlib
 import shutil
 import errno
@@ -46,7 +49,7 @@ def get_datetime(path):
     return datetime.strptime(str(metadata.get(datetime_tag)), '%Y:%m:%d %H:%M:%S')
 
 
-def organize(input_root, output_root):
+def organize(input_root, output_root, copy=False, dry_run=False):
     # Find all the photos in the input_dir
     for dirpath, dirnames, filenames in os.walk(input_root):
         for filename in filenames:
@@ -57,7 +60,7 @@ def organize(input_root, output_root):
                 # Get the EXIF datetime
                 dt = get_datetime(filepath)
                 # Determine the destination directory
-                output_dirs = os.path.join(output_root, str(dt.year), str(dt.month))
+                output_dirs = os.path.join(output_root, '%04d' % dt.year, '%02d' % dt.month)
                 # Create a destination file name based on the date and the file's SHA
                 destination_name = '%s_%s%s' % (dt.isoformat(), file_sha1(filepath), extension)
                 destination_path = os.path.join(output_dirs, destination_name)
@@ -65,14 +68,18 @@ def organize(input_root, output_root):
                 if os.path.isfile(destination_path):
                     # Logging would be nice
                     continue
-                # Create the destination directory, if it does not already exist
-                try:
-                    os.makedirs(output_dirs)
-                except OSError as e:
-                    if e.errno != errno.EEXIST:
-                        raise e
-                # Move the image to the destination
-                shutil.move(filepath, destination_path)
+                if not dry_run:
+                    # Create the destination directory, if it does not already exist
+                    try:
+                        os.makedirs(output_dirs)
+                    except OSError as e:
+                        if e.errno != errno.EEXIST:
+                            raise e
+                    # Move or copy the image to the destination
+                    if copy:
+                        shutil.copy(filepath, destination_path)
+                    else:
+                        shutil.move(filepath, destination_path)
                 # Append the paths to the list of moved files
                 yield {'source': filepath,
                        'destination': destination_path}
@@ -82,3 +89,33 @@ def organize(input_root, output_root):
             except Exception as e:
                 # Logging would be nice
                 continue
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Organize photos')
+    parser.add_argument('input_directory', type=str,
+                        help='directory to read files from')
+    parser.add_argument('output_directory', type=str,
+                        help='directory to move or copy files to')
+    parser.add_argument('-v', '--verbose', action='store_true',
+                        help='enable verbose output')
+    parser.add_argument('-c', '--copy', action='store_true',
+                        help='copy files instead of moving them')
+    parser.add_argument('--dry-run', action='store_true',
+                        help='dry-run (do not perform move or copy)')
+
+    args = parser.parse_args()
+
+    if args.dry_run:
+        print 'Running in dry-run mode. No files will be moved or copied. Warning: dry-run mode ' \
+              'is unable to check for duplicates.\n'
+
+    moved_files = 0
+    verb = 'Copied' if args.copy else 'Moved'
+    for moved_file in organize(args.input_directory, args.output_directory,
+                               copy=args.copy, dry_run=args.dry_run):
+        if args.verbose:
+            print '%s %r --> %r' % (verb, moved_file['source'], moved_file['destination'])
+        moved_files += 1
+
+    print '\nSuccessfully %s %d files into %r' % (verb.lower(), moved_files, args.output_directory)
