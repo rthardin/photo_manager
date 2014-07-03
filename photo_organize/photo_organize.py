@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 
 import argparse
-from datetime import datetime
 import hashlib
 import shutil
 import errno
-import signal
 import fcntl
 import os
 from hachoir_metadata import extractMetadata
