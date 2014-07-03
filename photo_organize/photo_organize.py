@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 
 import argparse
+from datetime import datetime
 import hashlib
 import shutil
 import errno
+import signal
+import fcntl
 import os
 from hachoir_metadata import extractMetadata
 from hachoir_core.cmd_line import unicodeFilename
@@ -19,6 +22,30 @@ supported_extensions = ['.jpg',
                         '.mov',
                         '.avi',
                         '.thm']
+
+
+class BlockLockAndDropIt:
+    """
+    Context manager for locking a file. Blocks on __enter__ until a
+    lock is acquired. Unlocks and closes the file handle on __exit__
+    """
+
+    def __init__(self, filepath):
+        self.lf = None
+        self.filepath = filepath
+
+    # Open the file and acquire the lock
+    def __enter__(self):
+        # Open the lock file
+        self.lf = open(self.filepath, 'w')
+        # Attempt to acquire the lock, and raise an IOError if lock fails
+        fcntl.lockf(self.lf, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        return True
+
+    # Always unlock and close file on clean or unclean exit
+    def __exit__(self, *args):
+        fcntl.lockf(self.lf, fcntl.LOCK_UN)
+        self.lf.close()
 
 
 def read_in_chunks(path, chunk_size=4194304):
@@ -128,11 +155,17 @@ if __name__ == "__main__":
 
     moved_files = 0
     verb = 'copied' if args.copy else 'moved'
-    for moved_file in organize(args.input_directory, args.output_directory,
-                               copy=args.copy, dry_run=args.dry_run):
-        if args.verbose:
-            print '%s %r --> %r' % (verb.title(), moved_file['source'], moved_file['destination'])
-        moved_files += 1
+    try:
+        with BlockLockAndDropIt(os.path.join(args.input_directory, '.photo_organize_lock')):
+            for moved_file in organize(args.input_directory, args.output_directory,
+                                       copy=args.copy, dry_run=args.dry_run):
+                if args.verbose:
+                    print '%s %r --> %r' % (verb.title(),
+                                            moved_file['source'], moved_file['destination'])
+                moved_files += 1
 
-    if moved_files:
-        print '\nSuccessfully %s %d files into %r' % (verb, moved_files, args.output_directory)
+            if moved_files:
+                print '\nSuccessfully %s %d files into %r' % (verb,
+                                                              moved_files, args.output_directory)
+    except IOError:
+        print '\nAn instance is already running on this directory'
