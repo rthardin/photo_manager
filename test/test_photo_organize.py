@@ -60,16 +60,19 @@ class TestPhotoOrganize(unittest.TestCase):
 
     def test_organize_photos(self):
         # Define and create the input and output directories
-        input_dir = os.path.join(self.test_dir, 'input')
         output_dir = os.path.join(self.test_dir, 'output')
-        os.mkdir(input_dir)
         os.mkdir(output_dir)
-        # Copy the test photos to the input directory
-        dirname = os.path.split(photo_directory)[1]
-        shutil.copytree(photo_directory, os.path.join(input_dir, dirname))
         # Organize the photos
-        for moved_file in photo_organize.organize(input_dir, output_dir):
+        moved_files = [moved_file for moved_file in
+                       photo_organize.organize(photo_directory, output_dir, copy=True)]
+        for moved_file in moved_files:
             print moved_file
+        # Verify some shit
+        assert len(moved_files) == 5, \
+            'Should have moved 5 files'
+        for moved_file in moved_files:
+            assert output_dir in moved_file['destination'], \
+                'File got moved to the wrong place'
 
 if __name__ == '__main__':
     unittest.main()
