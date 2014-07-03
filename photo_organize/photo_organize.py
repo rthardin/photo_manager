@@ -103,11 +103,12 @@ def organize(input_root, output_root, copy=False, dry_run=False):
                 output_dirs = os.path.join(output_root, '%04d' % dt.year, '%02d' % dt.month)
                 # Create a destination file name based on the date and the file's SHA
                 destination_name = '%s_%s%s' % (dt.isoformat(), file_sha1(filepath), extension)
+                # Check if the destination file already exists, and if it does, move it to the
+                # duplicates directory
                 destination_path = os.path.join(output_dirs, destination_name)
-                # Check if the destination file already exists, and if it does, skip it
                 if os.path.isfile(destination_path):
-                    # Logging would be nice
-                    continue
+                    output_dirs = os.path.join(output_root, 'Duplicates')
+                    destination_path = os.path.join(output_dirs, destination_name)
                 if not dry_run:
                     # Create the destination directory, if it does not already exist
                     try:
