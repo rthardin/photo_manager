@@ -41,9 +41,10 @@ class TestPhotoOrganize(unittest.TestCase):
             photo_path = os.path.join(valid_photo_directory, photo_filename)
             metadata = photo_organize.get_metadata(photo_path)
             assert metadata, \
-                'get_metadata() should return a dict, not %s ' % type(metadata)
-            assert len(metadata.keys()) > 0, \
-                'get_metadata() returned a dict with no keys'
+                'get_metadata() should return non-None, non-empty'
+            keys = [data.key for data in metadata]
+            assert len(keys) > 0, \
+                'get_metadata() returned an object with no keys'
 
     def test_get_datetime(self):
         # What happens if a non-photo is attempted?
@@ -68,8 +69,8 @@ class TestPhotoOrganize(unittest.TestCase):
         for moved_file in moved_files:
             print moved_file
         # Verify some shit
-        assert len(moved_files) == 5, \
-            'Should have moved 5 files'
+        assert len(moved_files) == 6, \
+            'Should have moved 6 files'
         for moved_file in moved_files:
             assert output_dir in moved_file['destination'], \
                 'File got moved to the wrong place'

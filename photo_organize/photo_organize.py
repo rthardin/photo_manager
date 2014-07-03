@@ -5,8 +5,10 @@ import hashlib
 import shutil
 import errno
 import os
-import exifread
-from datetime import datetime
+from hachoir_metadata import extractMetadata
+from hachoir_core.cmd_line import unicodeFilename
+from hachoir_parser import createParser
+from hachoir_core.error import HachoirError
 
 
 def read_in_chunks(path, chunk_size=1048576):
@@ -27,26 +29,27 @@ def file_sha1(path):
 
 
 def get_metadata(path):
-    # Open the image and retrieve all of the metadata
-    with open(path, 'rb') as img_file:
-        metadata = exifread.process_file(img_file)
-    # If it doesn't contain metadata, raise an Exception
+    # Create a parser for the file
+    parser = createParser(unicodeFilename(path), path)
+    if not parser:
+        raise ValueError('Unable to parse %r' % path)
+    # Read the metadata
+    try:
+        metadata = extractMetadata(parser)
+    except HachoirError as e:
+        raise ValueError('Metadata extraction error: %s' % e)
+    # Check that there really was metadata
     if not metadata:
-        raise ValueError('%r is not an image, or does not contain EXIF metadata' % path)
+        raise ValueError('Unable to extract metadata for %r' % path)
     return metadata
 
 
 def get_datetime(path):
-    # Name of the EXIF tag that contains the photo datetime
-    datetime_tag = 'EXIF DateTimeOriginal'
-    # Open the image and retrieve the metadata
-    with open(path, 'rb') as img_file:
-        metadata = exifread.process_file(img_file, details=False, stop_tag=datetime_tag)
-    # Get the datetime string
-    if not metadata.get(datetime_tag):
-        raise ValueError('%r is not an image, or does not contain EXIF metadata' % path)
-    # Convert the datetime str into a datetime
-    return datetime.strptime(str(metadata.get(datetime_tag)), '%Y:%m:%d %H:%M:%S')
+    # Pull the datetime from the file's metadata, and let exceptions bubble up
+    try:
+        return get_metadata(path).get('creation_date')
+    except ValueError as e:
+        raise ValueError('Unable to extract creation date for %r: %s' % (path, e))
 
 
 def organize(input_root, output_root, copy=False, dry_run=False):
