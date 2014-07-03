@@ -14,6 +14,12 @@ from hachoir_core.error import HachoirError
 import hachoir_core.config
 hachoir_core.config.quiet = True
 
+supported_extensions = ['.jpg',
+                        '.jpeg',
+                        '.mov',
+                        '.avi',
+                        '.thm']
+
 
 def read_in_chunks(path, chunk_size=4194304):
     with open(path, 'rb') as f:
@@ -62,6 +68,8 @@ def organize(input_root, output_root, copy=False, dry_run=False):
         for filename in filenames:
             # Get the extension
             extension = os.path.splitext(filename)[1].lower()
+            if extension not in supported_extensions:
+                continue
             filepath = os.path.join(dirpath, filename)
             try:
                 # Get the EXIF datetime
