@@ -15,7 +15,7 @@ import hachoir_core.config
 hachoir_core.config.quiet = True
 
 
-def read_in_chunks(path, chunk_size=1048576):
+def read_in_chunks(path, chunk_size=4194304):
     with open(path, 'rb') as f:
         while True:
             data = f.read(chunk_size)
