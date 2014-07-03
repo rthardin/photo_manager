@@ -110,15 +110,15 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.dry_run:
-        print 'Running in dry-run mode. No files will be moved or copied. Warning: dry-run mode ' \
-              'is unable to check for duplicates.\n'
+        print 'Running in dry-run mode. No files will be moved or copied.\n' \
+              'Warning: dry-run mode is unable to check for duplicates.\n'
 
     moved_files = 0
-    verb = 'Copied' if args.copy else 'Moved'
+    verb = 'copied' if args.copy else 'moved'
     for moved_file in organize(args.input_directory, args.output_directory,
                                copy=args.copy, dry_run=args.dry_run):
         if args.verbose:
-            print '%s %r --> %r' % (verb, moved_file['source'], moved_file['destination'])
+            print '%s %r --> %r' % (verb.title(), moved_file['source'], moved_file['destination'])
         moved_files += 1
 
-    print '\nSuccessfully %s %d files into %r' % (verb.lower(), moved_files, args.output_directory)
+    print '\nSuccessfully %s %d files into %r' % (verb, moved_files, args.output_directory)
