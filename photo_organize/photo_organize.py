@@ -10,6 +10,10 @@ from hachoir_core.cmd_line import unicodeFilename
 from hachoir_parser import createParser
 from hachoir_core.error import HachoirError
 
+# Turn off warnings
+import hachoir_core.config
+hachoir_core.config.quiet = True
+
 
 def read_in_chunks(path, chunk_size=1048576):
     with open(path, 'rb') as f:
