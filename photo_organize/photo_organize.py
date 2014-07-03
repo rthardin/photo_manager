@@ -99,7 +99,8 @@ def organize(input_root, output_root, copy=False, dry_run=False):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Organize photos')
+    description = 'Find media files in a directory, and organize them by date.'
+    parser = argparse.ArgumentParser(description=description)
     parser.add_argument('input_directory', type=str,
                         help='directory to read files from')
     parser.add_argument('output_directory', type=str,
@@ -109,7 +110,7 @@ if __name__ == "__main__":
     parser.add_argument('-c', '--copy', action='store_true',
                         help='copy files instead of moving them')
     parser.add_argument('--dry-run', action='store_true',
-                        help='dry-run (do not perform move or copy)')
+                        help='dry-run (do not move or copy)')
 
     args = parser.parse_args()
 
