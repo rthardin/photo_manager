@@ -134,4 +134,5 @@ if __name__ == "__main__":
             print '%s %r --> %r' % (verb.title(), moved_file['source'], moved_file['destination'])
         moved_files += 1
 
-    print '\nSuccessfully %s %d files into %r' % (verb, moved_files, args.output_directory)
+    if moved_files:
+        print '\nSuccessfully %s %d files into %r' % (verb, moved_files, args.output_directory)
