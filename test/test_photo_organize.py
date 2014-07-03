@@ -69,8 +69,8 @@ class TestPhotoOrganize(unittest.TestCase):
         for moved_file in moved_files:
             print moved_file
         # Verify some shit
-        assert len(moved_files) == 6, \
-            'Should have moved 6 files'
+        assert len(moved_files) == 7, \
+            'Should have moved 7 files'
         for moved_file in moved_files:
             assert output_dir in moved_file['destination'], \
                 'File got moved to the wrong place'
