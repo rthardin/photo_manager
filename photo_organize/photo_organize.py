@@ -167,11 +167,13 @@ if __name__ == "__main__":
     fh = RotatingFileHandler(os.path.join(args.input_directory, 'photo_organize.log'),
                              maxBytes=250 * 1024,  # 250KB
                              backupCount=3)
+    formatter = logging.Formatter('%(asctime)s : %(levelname)8s : %(message)s')
+    fh.setFormatter(formatter)
     logger.addHandler(fh)
 
     if args.dry_run:
         logging.info('Running in dry-run mode. No files will be moved or copied')
-        logging.warning('Warning: dry-run mode is unable to check for duplicates')
+        logging.warning('dry-run mode is unable to check for duplicates')
 
     processed_files = 0
     try:
