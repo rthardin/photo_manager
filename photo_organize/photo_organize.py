@@ -144,13 +144,6 @@ def organize(input_root, output_root, copy=False, dry_run=False, skip_duplicates
 
 
 if __name__ == "__main__":
-    # Set up the logger
-    logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
-    fh = RotatingFileHandler('photo_organize.log',
-                             maxBytes=250 * 1024,  # 250KB
-                             backupCount=3)
-    logger.addHandler(fh)
     # Do parsing
     description = 'Find media files in a directory, and organize them by date.'
     parser = argparse.ArgumentParser(description=description)
@@ -168,6 +161,13 @@ if __name__ == "__main__":
                         help='dry-run (do not move or copy)')
 
     args = parser.parse_args()
+    # Set up the logger
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    fh = RotatingFileHandler(os.path.join(args.input_directory, 'photo_organize.log'),
+                             maxBytes=250 * 1024,  # 250KB
+                             backupCount=3)
+    logger.addHandler(fh)
 
     if args.dry_run:
         logging.info('Running in dry-run mode. No files will be moved or copied')
