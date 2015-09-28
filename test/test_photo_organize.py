@@ -40,11 +40,9 @@ class TestPhotoOrganize(unittest.TestCase):
         for photo_filename in photo_filenames:
             photo_path = os.path.join(valid_photo_directory, photo_filename)
             metadata = photo_organize.get_metadata(photo_path)
-            assert metadata, \
-                'get_metadata() should return non-None, non-empty'
+            self.assertIsNotNone(metadata)
             keys = [data.key for data in metadata]
-            assert len(keys) > 0, \
-                'get_metadata() returned an object with no keys'
+            self.assertGreater(len(keys), 0)
 
     def test_get_datetime(self):
         # What happens if a non-photo is attempted?
@@ -56,8 +54,7 @@ class TestPhotoOrganize(unittest.TestCase):
         for photo_filename in photo_filenames:
             photo_path = os.path.join(valid_photo_directory, photo_filename)
             dt = photo_organize.get_datetime(photo_path)
-            assert isinstance(dt, datetime), \
-                'get_datetime() should return a datetime, not %s' % type(dt)
+            self.assertIsInstance(dt, datetime)
 
     def test_organize_photos(self):
         # Define and create the input and output directories
@@ -69,11 +66,10 @@ class TestPhotoOrganize(unittest.TestCase):
         for moved_file in moved_files:
             print moved_file
         # Verify some shit
-        assert len(moved_files) == 7, \
-            'Should have moved 7 files'
+        self.assertEqual(len(moved_files), 7)
         for moved_file in moved_files:
-            assert output_dir in moved_file['destination'], \
-                'File got moved to the wrong place'
+            self.assertIn(output_dir, moved_file['destination'],
+                          'File got moved to the wrong place')
 
 if __name__ == '__main__':
     unittest.main()
