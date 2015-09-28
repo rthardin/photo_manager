@@ -94,25 +94,39 @@ def organize(input_root, output_root, copy=False, dry_run=False, skip_duplicates
     for dirpath, dirnames, filenames in os.walk(input_root):
         for filename in filenames:
             # Get the extension
-            extension = os.path.splitext(filename)[1].lower()
-            if extension not in supported_extensions:
-                continue
             filepath = os.path.join(dirpath, filename)
             logging.debug('Examining "%s"', filepath)
+            extension = os.path.splitext(filepath)[1].lower()
+            if extension not in supported_extensions:
+                logging.info('Skipping "%s": Unsupported extension "%s"' % (filepath, extension))
+                continue
+            # Outer try/catch block to catch any unexpected stuff
             try:
-                # Get the EXIF datetime
-                dt = get_datetime(filepath)
+                try:
+                    # Get the EXIF datetime
+                    dt = get_datetime(filepath)
+                # It's not an image, or does not contain EXIF metadata
+                except ValueError:
+                    logging.warning('Unable to retrieve metadata for "%s"' % filepath)
+                    dt = None
                 # Determine the destination directory
-                output_dirs = os.path.join(output_root, '%04d' % dt.year, '%02d' % dt.month)
-                # Create a destination file name based on the date and the file's SHA
-                destination_name = '%s_%s%s' % (dt.isoformat(), file_sha1(filepath), extension)
-                destination_path = os.path.join(output_dirs, destination_name)
+                if dt is not None:
+                    output_dirs = os.path.join(output_root, '%04d' % dt.year, '%02d' % dt.month)
+                    # Create a destination file name based on the date and the file's SHA
+                    destination_name = '%s_%s%s' % (dt.isoformat(), file_sha1(filepath), extension)
+                    destination_path = os.path.join(output_dirs, destination_name)
+                else:
+                    output_dirs = os.path.join(output_root, 'no_metadata')
+                    # Create a destination file name based on the date and the file's SHA
+                    destination_name = '%s%s' % (file_sha1(filepath), extension)
+                    destination_path = os.path.join(output_dirs, destination_name)
                 # Check if the destination file already exists
                 if os.path.isfile(destination_path):
                     if skip_duplicates:
                         logging.info('Skipping "%s": Duplicate of "%s"' % (filepath, destination_path))
+                        continue
                     else:
-                        output_dirs = os.path.join(output_root, 'Duplicates')
+                        output_dirs = os.path.join(output_root, 'duplicates')
                         destination_path = os.path.join(output_dirs, destination_name)
                 # Create the destination directory, if it does not already exist
                 if not dry_run:
@@ -134,10 +148,6 @@ def organize(input_root, output_root, copy=False, dry_run=False, skip_duplicates
                 # Append the paths to the list of moved files
                 yield {'source': filepath,
                        'destination': destination_path}
-            # If it's not an image, or does not contain EXIF metadata, skip it
-            except ValueError:
-                logging.info('Skipping "%s": Not an image, or does not contain EXIF metadata' % filepath)
-                continue
             except Exception:
                 logging.exception('Exploded working on "%s"' % filepath)
                 continue
@@ -167,7 +177,7 @@ if __name__ == "__main__":
     fh = RotatingFileHandler(os.path.join(args.input_directory, 'photo_organize.log'),
                              maxBytes=250 * 1024,  # 250KB
                              backupCount=3)
-    formatter = logging.Formatter('%(asctime)s : %(levelname)8s : %(message)s')
+    formatter = logging.Formatter('%(asctime)s : %(levelname)7s : %(message)s')
     fh.setFormatter(formatter)
     logger.addHandler(fh)
 

@@ -67,7 +67,7 @@ class TestPhotoOrganize(unittest.TestCase):
         moved_files = [moved_file for moved_file in
                        photo_organize.organize(photo_directory, output_dir, copy=True)]
         # Verify some shit
-        self.assertEqual(len(moved_files), 7)
+        self.assertEqual(len(moved_files), 10)
         for moved_file in moved_files:
             self.assertIn(output_dir, moved_file['destination'],
                           'File got moved to the wrong place')
