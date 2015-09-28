@@ -143,6 +143,7 @@ def organize(input_root, output_root, copy=False, dry_run=False, skip_duplicates
 
 
 if __name__ == "__main__":
+    logging.getLogger().setLevel(logging.INFO)
     description = 'Find media files in a directory, and organize them by date.'
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('input_directory', type=str,
