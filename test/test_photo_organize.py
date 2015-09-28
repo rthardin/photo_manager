@@ -1,3 +1,4 @@
+import logging
 import shutil
 import unittest
 
@@ -22,6 +23,8 @@ class TestPhotoOrganize(unittest.TestCase):
             pass
         # Create the test directory
         os.mkdir(self.test_dir)
+        # Set logging to debug
+        logging.getLogger().setLevel(logging.INFO)
 
     def tearDown(self):
         # Delete the test directory if it exists
@@ -63,8 +66,6 @@ class TestPhotoOrganize(unittest.TestCase):
         # Organize the photos
         moved_files = [moved_file for moved_file in
                        photo_organize.organize(photo_directory, output_dir, copy=True)]
-        for moved_file in moved_files:
-            print moved_file
         # Verify some shit
         self.assertEqual(len(moved_files), 7)
         for moved_file in moved_files:

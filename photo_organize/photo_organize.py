@@ -2,6 +2,7 @@
 
 import argparse
 import hashlib
+import logging
 import shutil
 import errno
 import fcntl
@@ -87,7 +88,7 @@ def get_datetime(path):
         raise ValueError('Unable to extract creation date for %r: %s' % (path, e))
 
 
-def organize(input_root, output_root, copy=False, dry_run=False):
+def organize(input_root, output_root, copy=False, dry_run=False, skip_duplicates=False):
     # Find all the photos in the input_dir
     for dirpath, dirnames, filenames in os.walk(input_root):
         for filename in filenames:
@@ -96,6 +97,7 @@ def organize(input_root, output_root, copy=False, dry_run=False):
             if extension not in supported_extensions:
                 continue
             filepath = os.path.join(dirpath, filename)
+            logging.debug('Examining "%s"', filepath)
             try:
                 # Get the EXIF datetime
                 dt = get_datetime(filepath)
@@ -103,32 +105,40 @@ def organize(input_root, output_root, copy=False, dry_run=False):
                 output_dirs = os.path.join(output_root, '%04d' % dt.year, '%02d' % dt.month)
                 # Create a destination file name based on the date and the file's SHA
                 destination_name = '%s_%s%s' % (dt.isoformat(), file_sha1(filepath), extension)
-                # Check if the destination file already exists, and if it does, move it to the
-                # duplicates directory
                 destination_path = os.path.join(output_dirs, destination_name)
+                # Check if the destination file already exists
                 if os.path.isfile(destination_path):
-                    output_dirs = os.path.join(output_root, 'Duplicates')
-                    destination_path = os.path.join(output_dirs, destination_name)
+                    if skip_duplicates:
+                        logging.info('Skipping "%s": Duplicate of "%s"' % (filepath, destination_path))
+                    else:
+                        output_dirs = os.path.join(output_root, 'Duplicates')
+                        destination_path = os.path.join(output_dirs, destination_name)
+                # Create the destination directory, if it does not already exist
                 if not dry_run:
-                    # Create the destination directory, if it does not already exist
                     try:
                         os.makedirs(output_dirs)
+                        logging.debug('Created "%s"', output_dirs)
                     except OSError as e:
                         if e.errno != errno.EEXIST:
                             raise e
-                    # Move or copy the image to the destination
-                    if copy:
+                # Move or copy the image to the destination
+                if copy:
+                    logging.info('Copying "%s" to "%s"', filepath, destination_path)
+                    if not dry_run:
                         shutil.copy(filepath, destination_path)
-                    else:
+                else:
+                    logging.info('Moving "%s" to "%s"', filepath, destination_path)
+                    if not dry_run:
                         shutil.move(filepath, destination_path)
                 # Append the paths to the list of moved files
                 yield {'source': filepath,
                        'destination': destination_path}
             # If it's not an image, or does not contain EXIF metadata, skip it
             except ValueError:
+                logging.info('Skipping "%s": Not an image, or does not contain EXIF metadata' % filepath)
                 continue
-            except Exception as e:
-                # Logging would be nice
+            except Exception:
+                logging.exception('Exploded working on "%s"' % filepath)
                 continue
 
 
@@ -143,28 +153,31 @@ if __name__ == "__main__":
                         help='enable verbose output')
     parser.add_argument('-c', '--copy', action='store_true',
                         help='copy files instead of moving them')
+    parser.add_argument('--skip-duplicates', action='store_true',
+                        help='do not process duplicate images')
     parser.add_argument('--dry-run', action='store_true',
                         help='dry-run (do not move or copy)')
 
     args = parser.parse_args()
 
     if args.dry_run:
-        print 'Running in dry-run mode. No files will be moved or copied.\n' \
-              'Warning: dry-run mode is unable to check for duplicates.\n'
+        logging.info('Running in dry-run mode. No files will be moved or copied')
+        logging.warning('Warning: dry-run mode is unable to check for duplicates')
 
-    moved_files = 0
-    verb = 'copied' if args.copy else 'moved'
+    processed_files = 0
     try:
         with BlockLockAndDropIt(os.path.join(args.input_directory, '.photo_organize_lock')):
-            for moved_file in organize(args.input_directory, args.output_directory,
-                                       copy=args.copy, dry_run=args.dry_run):
-                if args.verbose:
-                    print '%s %r --> %r' % (verb.title(),
-                                            moved_file['source'], moved_file['destination'])
-                moved_files += 1
+            for processed_file in organize(args.input_directory,
+                                           args.output_directory,
+                                           copy=args.copy,
+                                           dry_run=args.dry_run,
+                                           skip_duplicates=args.skip_duplicates):
+                processed_files += 1
 
-            if moved_files:
-                print '\nSuccessfully %s %d files into %r' % (verb,
-                                                              moved_files, args.output_directory)
+            if processed_files:
+                if args.copy:
+                    logging.info('Successfully copied %d files into "%s"' % (processed_files, args.output_directory))
+                else:
+                    logging.info('Successfully moved %d files into "%s"' % (processed_files, args.output_directory))
     except IOError:
-        print '\nAn instance is already running on this directory'
+        logging.error('An instance is already running on this directory')
