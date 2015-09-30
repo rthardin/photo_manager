@@ -207,7 +207,6 @@ if __name__ == "__main__":
         logging.info('Running in dry-run mode. No files will be moved or copied')
         logging.warning('dry-run mode is unable to check for duplicates')
 
-    processed_files = 0
     try:
         with BlockLockAndDropIt(os.path.join(args.input_directory, '.photo_organize_lock')):
             for processed_file in organize(args.input_directory,
@@ -215,14 +214,7 @@ if __name__ == "__main__":
                                            copy=args.copy,
                                            dry_run=args.dry_run,
                                            skip_duplicates=args.skip_duplicates):
-                processed_files += 1
-
-            if processed_files:
-                if args.copy:
-                    logging.info('Successfully copied %d files into "%s"' % (processed_files, args.output_directory))
-                else:
-                    logging.info('Successfully moved %d files into "%s"' % (processed_files, args.output_directory))
     except LockAcquireError:
-        logging.info('An instance is already running on this directory')
+        logging.debug('An instance is already running on this directory')
     except:
         logging.exception()
