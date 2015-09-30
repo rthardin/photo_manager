@@ -17,13 +17,6 @@ from hachoir_core.error import HachoirError
 import hachoir_core.config
 hachoir_core.config.quiet = True
 
-supported_extensions = ['.jpg',
-                        '.jpeg',
-                        '.mov',
-                        '.avi',
-                        '.thm',
-                        '.mp4']
-
 
 class LockAcquireError(IOError):
     pass
@@ -108,9 +101,6 @@ def organize(input_root, output_root, copy=False, dry_run=False, delete_duplicat
             filepath = os.path.join(dirpath, filename)
             logging.debug('Examining "%s"', filepath)
             extension = os.path.splitext(filepath)[1].lower()
-            if extension not in supported_extensions:
-                logging.info('Skipping "%s": Unsupported extension "%s"' % (filepath, extension))
-                continue
             # Outer try/catch block to catch any unexpected stuff
             try:
                 try:
@@ -181,7 +171,6 @@ def organize(input_root, output_root, copy=False, dry_run=False, delete_duplicat
                 break
             # Move up to the parent
             path = os.path.split(path)[0]
-
 
 
 if __name__ == "__main__":
