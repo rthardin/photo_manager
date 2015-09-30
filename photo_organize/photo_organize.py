@@ -97,7 +97,7 @@ def get_datetime(path):
         raise ValueError('Unable to extract creation date for %r: %s' % (path, e))
 
 
-def organize(input_root, output_root, copy=False, dry_run=False, skip_duplicates=False):
+def organize(input_root, output_root, copy=False, dry_run=False, delete_duplicates=False):
     # Find all the photos in the input_dir
     for dirpath, dirnames, filenames in os.walk(input_root):
         # Ignore hidden files and directories
@@ -120,25 +120,30 @@ def organize(input_root, output_root, copy=False, dry_run=False, skip_duplicates
                 except ValueError:
                     logging.warning('Unable to retrieve metadata for "%s"' % filepath)
                     dt = None
+                # Calculate the sha1 of the file
+                sha_str = file_sha1(filepath)
                 # Determine the destination directory
                 if dt is not None:
                     output_dirs = os.path.join(output_root, '%04d' % dt.year, '%02d' % dt.month)
                     # Create a destination file name based on the date and the file's SHA
-                    destination_name = '%s_%s%s' % (dt.isoformat(), file_sha1(filepath), extension)
+                    destination_name = '%s_%s%s' % (dt.isoformat(), sha_str, extension)
                     destination_path = os.path.join(output_dirs, destination_name)
                 else:
                     output_dirs = os.path.join(output_root, 'no_metadata')
                     # Create a destination file name based on the date and the file's SHA
-                    destination_name = '%s%s' % (file_sha1(filepath), extension)
+                    destination_name = '%s%s' % (sha_str, extension)
                     destination_path = os.path.join(output_dirs, destination_name)
                 # Check if the destination file already exists
-                if os.path.isfile(destination_path):
-                    if skip_duplicates:
-                        logging.info('Skipping "%s": Duplicate of "%s"' % (filepath, destination_path))
+                if os.path.isfile(destination_path) and file_sha1(destination_path) == sha_str:
+                    # Duplicates can be deleted
+                    if delete_duplicates:
+                        logging.info('Deleting "%s": Duplicate of "%s"' % (filepath, destination_path))
+                        if not dry_run:
+                            try:
+                                os.remove(filepath)
+                            except:
+                                logging.exception('Failed to delete "%s"' % filepath)
                         continue
-                    else:
-                        output_dirs = os.path.join(output_root, 'duplicates')
-                        destination_path = os.path.join(output_dirs, destination_name)
                 # Create the destination directory, if it does not already exist
                 if not dry_run:
                     try:
@@ -191,8 +196,8 @@ if __name__ == "__main__":
                         help='enable verbose output')
     parser.add_argument('-c', '--copy', action='store_true',
                         help='copy files instead of moving them')
-    parser.add_argument('--skip-duplicates', action='store_true',
-                        help='do not process duplicate images')
+    parser.add_argument('--delete-duplicates', action='store_true',
+                        help='delete duplicate images')
     parser.add_argument('--dry-run', action='store_true',
                         help='dry-run (do not move or copy)')
 
@@ -218,7 +223,7 @@ if __name__ == "__main__":
                                            args.output_directory,
                                            copy=args.copy,
                                            dry_run=args.dry_run,
-                                           skip_duplicates=args.skip_duplicates):
+                                           delete_duplicates=args.delete_duplicates):
                 pass
     except LockAcquireError:
         logging.debug('An instance is already running on this directory')
