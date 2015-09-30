@@ -209,7 +209,8 @@ if __name__ == "__main__":
         logging.warning('dry-run mode is unable to check for duplicates')
 
     try:
-        with BlockLockAndDropIt(os.path.join(args.input_directory, '.photo_organize_lock')):
+        lock_path = os.path.join('/', 'tmp', args.input_directory.replace(os.sep, '_') + '.photo_organize_lock')
+        with BlockLockAndDropIt(lock_path):
             for processed_file in organize(args.input_directory,
                                            args.output_directory,
                                            copy=args.copy,
