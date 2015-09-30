@@ -158,6 +158,21 @@ def organize(input_root, output_root, copy=False, dry_run=False, skip_duplicates
             except Exception:
                 logging.exception('Exploded working on "%s"' % filepath)
                 continue
+        # Cleanup - if the directory or any ancestors are empty, delete them
+        path = dirpath
+        while path != input_root:
+            # Either remove the directory, or exit the loop
+            try:
+                if not dry_run:
+                    os.rmdir(path)
+                    logging.info('Removed empty directory "%s"' % path)
+            except OSError as e:
+                if e.errno != errno.ENOTEMPTY:
+                    logging.exception('Failed to delete directory "%s"' % path)
+                break
+            # Move up to the parent
+            path = os.path.split(path)[0]
+
 
 
 if __name__ == "__main__":
