@@ -24,6 +24,10 @@ supported_extensions = ['.jpg',
                         '.thm']
 
 
+class LockAcquireError(IOError):
+    pass
+
+
 class BlockLockAndDropIt:
     """
     Context manager for locking a file. Blocks on __enter__ until a
@@ -39,7 +43,10 @@ class BlockLockAndDropIt:
         # Open the lock file
         self.lf = open(self.filepath, 'w')
         # Attempt to acquire the lock, and raise an IOError if lock fails
-        fcntl.lockf(self.lf, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        try:
+            fcntl.lockf(self.lf, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except IOError as e:
+            raise LockAcquireError(e)
         return True
 
     # Always unlock and close file on clean or unclean exit
@@ -200,5 +207,7 @@ if __name__ == "__main__":
                     logging.info('Successfully copied %d files into "%s"' % (processed_files, args.output_directory))
                 else:
                     logging.info('Successfully moved %d files into "%s"' % (processed_files, args.output_directory))
-    except IOError:
-        logging.error('An instance is already running on this directory')
+    except LockAcquireError:
+        logging.info('An instance is already running on this directory')
+    except:
+        logging.exception()
