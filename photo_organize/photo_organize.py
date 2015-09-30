@@ -100,6 +100,9 @@ def get_datetime(path):
 def organize(input_root, output_root, copy=False, dry_run=False, skip_duplicates=False):
     # Find all the photos in the input_dir
     for dirpath, dirnames, filenames in os.walk(input_root):
+        # Ignore hidden files and directories
+        filenames = [f for f in filenames if not f[0] == '.']
+        dirnames[:] = [d for d in dirnames if not d[0] == '.']
         for filename in filenames:
             # Get the extension
             filepath = os.path.join(dirpath, filename)
