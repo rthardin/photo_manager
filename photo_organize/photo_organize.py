@@ -21,7 +21,8 @@ supported_extensions = ['.jpg',
                         '.jpeg',
                         '.mov',
                         '.avi',
-                        '.thm']
+                        '.thm',
+                        '.mp4']
 
 
 class LockAcquireError(IOError):
@@ -214,6 +215,7 @@ if __name__ == "__main__":
                                            copy=args.copy,
                                            dry_run=args.dry_run,
                                            skip_duplicates=args.skip_duplicates):
+                pass
     except LockAcquireError:
         logging.debug('An instance is already running on this directory')
     except:
