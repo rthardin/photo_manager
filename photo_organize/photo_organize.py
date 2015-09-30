@@ -184,7 +184,7 @@ if __name__ == "__main__":
     fh = RotatingFileHandler(os.path.join(args.input_directory, 'photo_organize.log'),
                              maxBytes=250 * 1024,  # 250KB
                              backupCount=3)
-    formatter = logging.Formatter('%(asctime)s : %(levelname)7s : %(message)s')
+    formatter = logging.Formatter('%(asctime)s : %(process)5d : %(levelname)7s : %(message)s')
     fh.setFormatter(formatter)
     logger.addHandler(fh)
 
