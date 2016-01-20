@@ -193,7 +193,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     # Set up the logger
     logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
     fh = RotatingFileHandler(os.path.join(args.input_directory, '.photo_organize.log'),
                              maxBytes=250 * 1024,  # 250KB
                              backupCount=3)
