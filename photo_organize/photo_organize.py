@@ -91,7 +91,7 @@ def get_datetime(path):
         raise ValueError('Unable to extract creation date for %r: %s' % (path, e))
 
 
-def organize(input_root, output_root, copy=False, dry_run=False, delete_duplicates=False, max_time_secs=50):
+def organize(input_root, output_root, copy=False, dry_run=False, delete_duplicates=False, max_time_secs=595):
     start_time = time.time()
     # Find all the photos in the input_dir
     for dirpath, dirnames, filenames in os.walk(input_root):
