@@ -90,13 +90,18 @@ def get_datetime(path):
         raise ValueError('Unable to extract creation date for %r: %s' % (path, e))
 
 
-def organize(input_root, output_root, copy=False, dry_run=False, delete_duplicates=False):
+def organize(input_root, output_root, copy=False, dry_run=False, delete_duplicates=False, max_files=50):
+    processed_files = 0
     # Find all the photos in the input_dir
     for dirpath, dirnames, filenames in os.walk(input_root):
+        if processed_files >= max_files:
+            break
         # Ignore hidden files and directories
         filenames = [f for f in filenames if not f[0] == '.']
         dirnames[:] = [d for d in dirnames if not d[0] == '.']
         for filename in filenames:
+            if processed_files >= max_files:
+                break
             # Get the extension
             filepath = os.path.join(dirpath, filename)
             logging.debug('Examining "%s"', filepath)
@@ -154,6 +159,7 @@ def organize(input_root, output_root, copy=False, dry_run=False, delete_duplicat
                 # Append the paths to the list of moved files
                 yield {'source': filepath,
                        'destination': destination_path}
+                processed_files += 1
             except Exception:
                 logging.exception('Exploded working on "%s"' % filepath)
                 continue
