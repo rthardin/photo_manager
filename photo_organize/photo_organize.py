@@ -19,9 +19,29 @@ import hachoir_core.config
 hachoir_core.config.quiet = True
 
 
+class PidFileError(IOError):
+	pass
+
+
 class LockAcquireError(IOError):
     pass
 
+
+class PidFile:
+	def __init__(self, directory='/tmp', prefix=''):
+		filename = prefix + '_photo_organize.pid'
+		self.path = os.path.join(directory, filename)
+	
+	def __enter__(self):
+		if os.path.isfile(self.path):
+			raise PidFileError('Pidfile already exists at %s' % self.path)
+		with open(self.path, 'w') as f:
+			f.write(str(os.getpid()))
+		return True
+	
+	def __exit__(self, *args):
+		os.remove(self.path)
+		
 
 class BlockLockAndDropIt:
     """
@@ -212,15 +232,14 @@ if __name__ == "__main__":
         logging.warning('dry-run mode is unable to check for duplicates')
 
     try:
-        lock_path = os.path.join('/', 'tmp', args.input_directory.replace(os.sep, '_') + '.photo_organize_lock')
-        with BlockLockAndDropIt(lock_path):
+        with PidFile(prefix=args.input_directory.replace(os.sep, '_')):
             for processed_file in organize(args.input_directory,
                                            args.output_directory,
                                            copy=args.copy,
                                            dry_run=args.dry_run,
                                            delete_duplicates=args.delete_duplicates):
                 pass
-    except LockAcquireError:
-        logging.debug('An instance is already running on this directory')
+    except PidFileError:
+        logging.debug('An instance is already running on "%s"' % args.input_directory)
     except:
-        logging.exception()
+        logging.exception('Something terrible happened')
