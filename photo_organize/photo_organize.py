@@ -221,8 +221,10 @@ if __name__ == "__main__":
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
     fh = RotatingFileHandler(os.path.join(args.input_directory, '.photo_organize.log'),
-                             maxBytes=250 * 1024,  # 250KB
-                             backupCount=3)
+                             maxBytes=10 * 1024 * 1024,  # 10MB
+                             backupCount=100,
+                             # encoding='bz2',
+                             )
     formatter = logging.Formatter('%(asctime)s : %(process)5d : %(levelname)7s : %(message)s')
     fh.setFormatter(formatter)
     logger.addHandler(fh)
