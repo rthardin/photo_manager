@@ -142,7 +142,7 @@ def organize(input_root, output_root, copy=False, dry_run=False, delete_duplicat
                 if dt is not None:
                     output_dirs = os.path.join(output_root, '%04d' % dt.year, '%02d' % dt.month)
                     # Create a destination file name based on the date and the file's SHA
-                    destination_name = '%s_%s%s' % (dt.isoformat(), sha_str, extension)
+                    destination_name = '%s_%s%s' % (dt.isoformat().replace(':', '-'), sha_str, extension)
                     destination_path = os.path.join(output_dirs, destination_name)
                 else:
                     output_dirs = os.path.join(output_root, 'no_metadata')
@@ -219,7 +219,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
     # Set up the logger
     logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
+    if args.verbose:
+        logger.setLevel(logging.DEBUG)
+    else:
+        logger.setLevel(logging.INFO)
     fh = RotatingFileHandler(os.path.join(args.input_directory, '.photo_organize.log'),
                              maxBytes=10 * 1024 * 1024,  # 10MB
                              backupCount=100,
